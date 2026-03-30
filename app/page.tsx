@@ -10,6 +10,24 @@ import {
   calculatePrice,
 } from '@/lib/pricing';
 
+const pageSuggestions = [
+  'Homepage',
+  'About Us',
+  'Services',
+  'Contact',
+  'Gallery',
+  'Blog',
+  'FAQ',
+  'Testimonials',
+  'Our Team',
+  'Pricing',
+  'Portfolio',
+  'News',
+  'Events',
+  'Partners',
+  'Privacy & Terms',
+];
+
 const projectTypeIcons: Record<string, JSX.Element> = {
   restaurant: (
     <svg width="15" height="15" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth="1.5" aria-hidden="true">
@@ -208,19 +226,49 @@ export default function PricingCalculator() {
                 </label>
                 <span className="text-2xl font-semibold text-navy-500">{pages}</span>
               </div>
-              <input
-                type="range"
-                min={1}
-                max={15}
-                step={1}
-                value={pages}
-                onChange={e => setPages(parseInt(e.target.value))}
-                className="w-full"
-              />
+              <div className="flex items-center gap-3">
+                <button
+                  onClick={() => setPages(p => Math.max(1, p - 1))}
+                  className="w-7 h-7 flex-shrink-0 rounded-md border border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100 hover:border-stone-300 flex items-center justify-center font-medium text-base transition-colors"
+                >
+                  −
+                </button>
+                <input
+                  type="range"
+                  min={1}
+                  max={15}
+                  step={1}
+                  value={pages}
+                  onChange={e => setPages(parseInt(e.target.value))}
+                  className="w-full"
+                />
+                <button
+                  onClick={() => setPages(p => Math.min(15, p + 1))}
+                  className="w-7 h-7 flex-shrink-0 rounded-md border border-stone-200 bg-stone-50 text-stone-600 hover:bg-stone-100 hover:border-stone-300 flex items-center justify-center font-medium text-base transition-colors"
+                >
+                  +
+                </button>
+              </div>
               <div className="flex justify-between text-[11px] text-stone-400 mt-1">
                 <span>1 page</span>
                 <span className="text-gold-600 font-medium">+GHS 250 per page beyond 5</span>
                 <span>15 pages</span>
+              </div>
+              <div className="flex flex-wrap gap-1.5 mt-3">
+                {pageSuggestions.slice(0, pages).map((name, i) => (
+                  <span
+                    key={name}
+                    className={`text-[11px] px-2.5 py-1 rounded-md font-medium transition-all ${
+                      i === 0
+                        ? 'bg-navy-500 text-white'
+                        : i < 5
+                        ? 'bg-stone-100 text-stone-600 border border-stone-200'
+                        : 'bg-gold-50 text-gold-700 border border-gold-200/60'
+                    }`}
+                  >
+                    {name}
+                  </span>
+                ))}
               </div>
             </div>
 
