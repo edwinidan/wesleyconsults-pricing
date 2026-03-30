@@ -11,15 +11,14 @@ export interface ProjectType {
   id: string;
   label: string;
   baseRate: number;
-  icon: string;
 }
 
 export const projectTypes: ProjectType[] = [
-  { id: 'restaurant', label: 'Restaurant / Food', baseRate: 1800, icon: '🍽' },
-  { id: 'portfolio', label: 'Portfolio / Personal', baseRate: 1500, icon: '💼' },
-  { id: 'business', label: 'Business / SMB', baseRate: 2000, icon: '🏢' },
-  { id: 'ecommerce', label: 'E-commerce / Store', baseRate: 2500, icon: '🛒' },
-  { id: 'nonprofit', label: 'NGO / Non-profit', baseRate: 1800, icon: '🤝' },
+  { id: 'restaurant', label: 'Restaurant / Food', baseRate: 1800 },
+  { id: 'portfolio', label: 'Portfolio / Personal', baseRate: 1500 },
+  { id: 'business', label: 'Business / SMB', baseRate: 2000 },
+  { id: 'ecommerce', label: 'E-commerce / Store', baseRate: 2500 },
+  { id: 'nonprofit', label: 'NGO / Non-profit', baseRate: 1800 },
 ];
 
 export const features: FeatureItem[] = [
