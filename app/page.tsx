@@ -7,8 +7,32 @@ import {
   timelines,
   revisionOptions,
   hostingTiers,
+  chatbotTiers,
   calculatePrice,
 } from '@/lib/pricing';
+
+const featureDetails: Record<string, string> = {
+  responsive: 'Your website will look great and work perfectly on any screen — phones, tablets, and desktops. Visitors never have to pinch and zoom.',
+  seo: 'We configure your site to show up on Google searches. Includes page titles, meta descriptions, a sitemap, and submission to Google Search Console.',
+  analytics: 'A free Google tool installed on your site that shows how many people visit, where they come from, which pages they read, and how long they stay.',
+  ssl: 'The padlock you see in the browser address bar. It encrypts your visitors\' data and is required for Google to trust and rank your site.',
+  contact: 'A form where clients can send you a message directly to your email inbox — works 24/7 even when you\'re not on WhatsApp.',
+  whatsapp: 'A floating button on every page that lets visitors start a WhatsApp conversation with you instantly — just one tap.',
+  maps: 'An interactive Google Map embedded on your site so clients can see exactly where you are and get turn-by-turn directions with one click.',
+  booking: 'Clients can book appointments, reserve tables, or schedule services directly from your website at any time of day.',
+  gallery: 'A clean photo grid where visitors can click images to view them full size. Perfect for restaurants, salons, events, and portfolios.',
+  menu: 'A well-organised display of your products, services, or food items — showing names, descriptions, and prices in a client-friendly layout.',
+  blog: 'A section where you can publish articles, news, and updates. Keeps your site fresh and helps you rank higher on Google over time.',
+  socials: 'Clickable icons linking to your Facebook, Instagram, TikTok, or other social pages so visitors can follow you in seconds.',
+  chatbot: 'A smart chat widget that automatically answers visitor questions about your hours, location, services, and pricing — reducing repetitive WhatsApp messages.',
+  content: 'We write all the text for your website professionally — headlines, about sections, service descriptions, and persuasive calls to action.',
+  logo: 'A custom logo designed for your business, plus defined brand colours and fonts used consistently across your entire website.',
+  photography: 'We source and license high-quality stock photos that match your brand and industry so your site looks polished from day one.',
+  animations: 'Subtle scroll-triggered effects, hover interactions, and page transitions that give your site a premium, modern feel.',
+  multilang: 'Your website available in two or more languages — ideal if your clients speak English and another language like Twi, Fante, or French.',
+  training: 'A 1-hour session (in person or video call) where we show you how to update your content, add photos, and manage your site confidently.',
+  emailsetup: 'A professional email address like info@yourbusiness.com — looks far more credible to clients than a personal Gmail account.',
+};
 
 const pageSuggestions = [
   'Homepage',
@@ -67,10 +91,18 @@ export default function PricingCalculator() {
   const [revisions, setRevisions] = useState('2');
   const [showBreakdown, setShowBreakdown] = useState(true);
   const [copied, setCopied] = useState(false);
+  const [chatbotTier, setChatbotTier] = useState('basic');
+  const [showGuide, setShowGuide] = useState(false);
+  const [openGuideCategories, setOpenGuideCategories] = useState<Record<string, boolean>>({
+    core: false,
+    functionality: false,
+    content: false,
+    extras: false,
+  });
 
   const result = useMemo(
-    () => calculatePrice({ projectType, pages, selectedFeatures, timeline, revisions }),
-    [projectType, pages, selectedFeatures, timeline, revisions]
+    () => calculatePrice({ projectType, pages, selectedFeatures, timeline, revisions, chatbotTier }),
+    [projectType, pages, selectedFeatures, timeline, revisions, chatbotTier]
   );
 
   const toggleFeature = useCallback((id: string) => {
@@ -105,8 +137,9 @@ export default function PricingCalculator() {
       `Timeline: ${result.timelineLabel}\n\n` +
       `*Price Range: GHS ${result.minPrice.toLocaleString()} – ${result.maxPrice.toLocaleString()}*\n\n` +
       `Payment: 30% deposit (GHS ${result.deposit.toLocaleString()}) to start, balance on delivery.\n\n` +
-      `Hosting & domain: GHS ${result.hostingMin}–${result.hostingMax}/year (separate)\n\n` +
-      `— WesleyConsults\n` +
+      `Hosting & domain: GHS ${result.hostingMin}–${result.hostingMax}/year (separate)\n` +
+      (result.chatbotMonthlyFee > 0 ? `AI Chatbot: GHS ${result.chatbotMonthlyFee}/month (recurring)\n` : '') +
+      `\n— WesleyConsults\n` +
       `Tel: 0500610780 | Email: wesleyconsults@gmail.com`
     );
     window.open(`https://wa.me/?text=${text}`, '_blank');
@@ -135,7 +168,8 @@ export default function PricingCalculator() {
       `PAYMENT\n` +
       `30% deposit: GHS ${result.deposit.toLocaleString()}\n` +
       `70% balance: GHS ${result.balance.toLocaleString()}\n\n` +
-      `HOSTING: GHS ${result.hostingMin}–${result.hostingMax}/year (separate)`;
+      `HOSTING: GHS ${result.hostingMin}–${result.hostingMax}/year (separate)` +
+      (result.chatbotMonthlyFee > 0 ? `\nAI CHATBOT: GHS ${result.chatbotMonthlyFee}/month (recurring)` : '');
 
     navigator.clipboard.writeText(text).then(() => {
       setCopied(true);
@@ -286,38 +320,126 @@ export default function PricingCalculator() {
                     {features
                       .filter(f => f.category === cat.key)
                       .map(f => (
-                        <label
-                          key={f.id}
-                          className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
-                            selectedFeatures.includes(f.id)
-                              ? 'bg-navy-500/[0.04]'
-                              : 'hover:bg-stone-50'
-                          }`}
-                        >
-                          <input
-                            type="checkbox"
-                            checked={selectedFeatures.includes(f.id)}
-                            onChange={() => toggleFeature(f.id)}
-                            disabled={f.default}
-                          />
-                          <div className="flex-1 min-w-0">
-                            <span className="text-sm font-medium text-stone-800">{f.label}</span>
-                            <span className="text-xs text-stone-400 ml-2 hidden sm:inline">
-                              {f.description}
-                            </span>
-                          </div>
-                          <span
-                            className={`text-xs font-medium flex-shrink-0 ${
-                              f.value === 0 ? 'text-emerald-600' : 'text-stone-500'
+                        <div key={f.id}>
+                          <label
+                            className={`flex items-center gap-3 px-3 py-2.5 rounded-lg cursor-pointer transition-colors ${
+                              selectedFeatures.includes(f.id)
+                                ? 'bg-navy-500/[0.04]'
+                                : 'hover:bg-stone-50'
                             }`}
                           >
-                            {f.value === 0 ? 'Included' : `+GHS ${f.value.toLocaleString()}`}
-                          </span>
-                        </label>
+                            <input
+                              type="checkbox"
+                              checked={selectedFeatures.includes(f.id)}
+                              onChange={() => toggleFeature(f.id)}
+                              disabled={f.default}
+                            />
+                            <div className="flex-1 min-w-0">
+                              <span className="text-sm font-medium text-stone-800">{f.label}</span>
+                              <span className="text-xs text-stone-400 ml-2 hidden sm:inline">
+                                {f.description}
+                              </span>
+                            </div>
+                            <span
+                              className={`text-xs font-medium flex-shrink-0 ${
+                                f.id === 'chatbot' ? 'text-stone-500' : f.value === 0 ? 'text-emerald-600' : 'text-stone-500'
+                              }`}
+                            >
+                              {f.id === 'chatbot'
+                                ? `+GHS ${chatbotTiers.find(t => t.id === chatbotTier)?.buildCost.toLocaleString()}`
+                                : f.value === 0 ? 'Included' : `+GHS ${f.value.toLocaleString()}`}
+                            </span>
+                          </label>
+                          {f.id === 'chatbot' && selectedFeatures.includes('chatbot') && (
+                            <div className="ml-9 mt-0.5 mb-1 space-y-0.5">
+                              {chatbotTiers.map(tier => (
+                                <label
+                                  key={tier.id}
+                                  className={`flex items-center gap-3 px-3 py-2 rounded-lg cursor-pointer transition-colors ${
+                                    chatbotTier === tier.id ? 'bg-navy-500/[0.06]' : 'hover:bg-stone-50'
+                                  }`}
+                                >
+                                  <input
+                                    type="radio"
+                                    name="chatbotTier"
+                                    value={tier.id}
+                                    checked={chatbotTier === tier.id}
+                                    onChange={() => setChatbotTier(tier.id)}
+                                  />
+                                  <div className="flex-1 min-w-0">
+                                    <span className="text-sm font-medium text-stone-800">
+                                      {tier.label.split(' — ')[0]}
+                                    </span>
+                                    <span className="text-xs text-stone-400 ml-2 hidden sm:inline">
+                                      {tier.label.split(' — ')[1]}
+                                    </span>
+                                  </div>
+                                  <span className="text-xs font-medium flex-shrink-0 text-stone-500">
+                                    GHS {tier.buildCost.toLocaleString()}
+                                    {tier.monthlyCost > 0 ? ` + ${tier.monthlyCost}/mo` : ''}
+                                  </span>
+                                </label>
+                              ))}
+                            </div>
+                          )}
+                        </div>
                       ))}
                   </div>
                 </div>
               ))}
+            </div>
+
+            {/* Feature guide */}
+            <div className="bg-white rounded-xl shadow-sm border border-stone-200/60 overflow-hidden">
+              <button
+                onClick={() => setShowGuide(!showGuide)}
+                className="w-full flex items-center justify-between px-5 py-3.5 text-sm font-medium text-stone-700 hover:bg-stone-50 transition"
+              >
+                <span>What does each item include?</span>
+                <span
+                  className="text-stone-400 transition-transform"
+                  style={{ transform: showGuide ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                >
+                  ▾
+                </span>
+              </button>
+              {showGuide && (
+                <div className="border-t border-stone-100">
+                  {categories.map(cat => (
+                    <div key={cat.key} className="border-b border-stone-100 last:border-b-0">
+                      <button
+                        onClick={() => setOpenGuideCategories(prev => ({ ...prev, [cat.key]: !prev[cat.key] }))}
+                        className="w-full flex items-center justify-between px-5 py-3 hover:bg-stone-50 transition"
+                      >
+                        <p className="text-[11px] font-semibold text-stone-400 uppercase tracking-widest">
+                          {cat.label}
+                        </p>
+                        <span
+                          className="text-stone-300 text-xs transition-transform"
+                          style={{ transform: openGuideCategories[cat.key] ? 'rotate(180deg)' : 'rotate(0deg)' }}
+                        >
+                          ▾
+                        </span>
+                      </button>
+                      {openGuideCategories[cat.key] && (
+                        <div className="px-5 pb-4 space-y-3">
+                          {features.filter(f => f.category === cat.key).map(f => (
+                            <div key={f.id} className="flex gap-3">
+                              <div className="mt-1.5 w-1.5 h-1.5 rounded-full bg-navy-500/40 flex-shrink-0" />
+                              <div>
+                                <p className="text-sm font-medium text-stone-800">{f.label}</p>
+                                <p className="text-xs text-stone-500 mt-0.5 leading-relaxed">
+                                  {featureDetails[f.id]}
+                                </p>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              )}
             </div>
 
             {/* Timeline & revisions */}
@@ -466,6 +588,12 @@ export default function PricingCalculator() {
                         </span>
                       </div>
                     )}
+                    {result.chatbotMonthlyFee > 0 && (
+                      <div className="flex justify-between py-1 text-sm text-navy-600">
+                        <span>AI Chatbot monthly fee</span>
+                        <span className="font-medium">GHS {result.chatbotMonthlyFee}/mo</span>
+                      </div>
+                    )}
                     <div className="flex justify-between py-2 text-sm border-t border-stone-100 mt-1">
                       <span className="text-stone-400 text-xs">+15% buffer included in range</span>
                     </div>
@@ -491,6 +619,48 @@ export default function PricingCalculator() {
                     <span>Total / year</span>
                     <span>
                       GHS {result.hostingMin}–{result.hostingMax}
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* Total cost summary */}
+              <div className="bg-white rounded-xl shadow-sm border border-stone-200/60 overflow-hidden">
+                <div className="px-5 py-3.5 border-b border-stone-100">
+                  <p className="text-xs font-medium text-stone-500 uppercase tracking-wider">Full cost summary</p>
+                </div>
+                <div className="px-5 py-4 space-y-2">
+                  <div className="flex justify-between text-sm">
+                    <span className="text-stone-500">Project build (one-time)</span>
+                    <span className="font-medium text-stone-800">
+                      GHS {result.minPrice.toLocaleString()} – {result.maxPrice.toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-sm">
+                    <span className="text-stone-500">Hosting & domain (annual)</span>
+                    <span className="font-medium text-stone-800">
+                      GHS {result.hostingMin} – {result.hostingMax}
+                    </span>
+                  </div>
+                  {result.chatbotMonthlyFee > 0 && (
+                    <div className="flex justify-between text-sm">
+                      <span className="text-stone-500">AI Chatbot (annual)</span>
+                      <span className="font-medium text-stone-800">
+                        GHS {(result.chatbotMonthlyFee * 12).toLocaleString()}
+                      </span>
+                    </div>
+                  )}
+                  <div className="h-px bg-stone-100" />
+                  <div className="flex justify-between text-sm">
+                    <span className="font-semibold text-navy-600">First year total</span>
+                    <span className="font-bold text-navy-600">
+                      GHS {(result.minPrice + result.hostingMin + result.chatbotMonthlyFee * 12).toLocaleString()} – {(result.maxPrice + result.hostingMax + result.chatbotMonthlyFee * 12).toLocaleString()}
+                    </span>
+                  </div>
+                  <div className="flex justify-between text-xs text-stone-400">
+                    <span>Year 2 onwards</span>
+                    <span>
+                      GHS {(result.hostingMin + result.chatbotMonthlyFee * 12).toLocaleString()} – {(result.hostingMax + result.chatbotMonthlyFee * 12).toLocaleString()}/yr
                     </span>
                   </div>
                 </div>

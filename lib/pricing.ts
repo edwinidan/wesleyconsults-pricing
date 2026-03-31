@@ -37,6 +37,7 @@ export const features: FeatureItem[] = [
   { id: 'menu', label: 'Menu / product listing', description: 'Organized product or food menu', value: 350, category: 'functionality' },
   { id: 'blog', label: 'Blog section', description: 'CMS-powered blog posts', value: 400, category: 'functionality' },
   { id: 'socials', label: 'Social media links', description: 'Social icons and feed embed', value: 100, category: 'functionality' },
+  { id: 'chatbot', label: 'AI Chatbot', description: 'Automated chat for FAQs, leads & bookings', value: 0, category: 'functionality' },
 
   // Content
   { id: 'content', label: 'Content writing', description: 'Professional copywriting for all pages', value: 500, category: 'content' },
@@ -62,6 +63,12 @@ export const revisionOptions = [
   { id: 'unlimited', label: 'Unlimited', cost: 600 },
 ];
 
+export const chatbotTiers = [
+  { id: 'basic', label: 'Basic — FAQ bot', buildCost: 700, monthlyCost: 0 },
+  { id: 'smart', label: 'Smart — AI-powered', buildCost: 1300, monthlyCost: 200 },
+  { id: 'full', label: 'Full — AI + lead capture + WhatsApp', buildCost: 2200, monthlyCost: 400 },
+];
+
 export const hostingTiers = {
   domain: { label: 'Domain registration', min: 80, max: 150 },
   hosting: { label: 'Web hosting', min: 100, max: 200 },
@@ -74,6 +81,7 @@ export function calculatePrice(config: {
   selectedFeatures: string[];
   timeline: string;
   revisions: string;
+  chatbotTier?: string;
 }) {
   const project = projectTypes.find(p => p.id === config.projectType)!;
   let base = project.baseRate;
@@ -93,6 +101,17 @@ export function calculatePrice(config: {
       selectedFeatureDetails.push({ label: feature.label, cost: feature.value });
     }
   });
+
+  // Chatbot tier
+  let chatbotMonthlyFee = 0;
+  if (config.selectedFeatures.includes('chatbot') && config.chatbotTier) {
+    const tier = chatbotTiers.find(t => t.id === config.chatbotTier);
+    if (tier) {
+      featureCost += tier.buildCost;
+      selectedFeatureDetails.push({ label: `AI Chatbot (${tier.label.split(' — ')[0]})`, cost: tier.buildCost });
+      chatbotMonthlyFee = tier.monthlyCost;
+    }
+  }
 
   // Revisions
   const revision = revisionOptions.find(r => r.id === config.revisions)!;
@@ -145,5 +164,6 @@ export function calculatePrice(config: {
     projectLabel: project.label,
     timelineLabel: timelineConfig.label,
     revisionLabel: revision.label,
+    chatbotMonthlyFee,
   };
 }
